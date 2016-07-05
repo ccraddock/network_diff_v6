@@ -1,6 +1,7 @@
 \documentclass[useAMS,usenatbib,referee]{bio}
 %\documentclass[12pt]{article}
 %\usepackage{fullpage}
+
 \usepackage{url,color}
 \usepackage{rotating,epsfig}
 \usepackage{verbatim}
@@ -64,7 +65,9 @@
 
 \begin{document}
 
-\title{Penalized Regression Method to Find Abnormality in brain network of Alzheimer's Disease}
+\title{Identifying differential networks in brain connectome graphs using penalized regression}
+
+%Penalized regression method for finding differences in brain connectome graphs} 
 
 % List of authors, with corresponding author marked by asterisk
 \author{DONGHYEON YU\\[2pt] 
@@ -72,7 +75,7 @@
 \\[2pt]
 SANG HAN LEE$^{\ast}$\\ [2pt]
 \textit{ 
-Center for Biomedical Imaging and Neuromodulation, Nathan Kline Institute for Psychiatric Research, Orangeburg, NY 10962, USA}
+ Center for Biomedical Imaging and Neuromodulation, Nathan Kline Institute for Psychiatric Research, Orangeburg, NY 10962, USA}
 \\[2pt]
 {shlee@nki.rfmh.org}\\[2pt]
 JOHAN LIM \\[2pt]
@@ -83,7 +86,8 @@ University of Texas Southwestern Medical Center, Dallas, TX 75390, USA}
 \\[2pt]
 R. CAMERON CRADDOCK\\ [2pt]
 \textit{ 
-Center for Biomedical Imaging and Neuromodulation, Nathan Kline Institute for Psychiatric Research, Orangeburg, NY 10962, USA}
+Center for Biomedical Imaging and Neuromodulation, Nathan Kline Institute for Psychiatric Research, Orangeburg, NY 10962, USA\\
+Center for the Developing Brain, Child Mind Institute, New York, NY 10022, USA}
 \\[2pt]
 BHARAT B. BISWAL  \\[2pt]
 \textit{ 
@@ -107,8 +111,8 @@ Department of Biomedical Engineering, New Jersey Institute of Technology, Newark
 
 
 \begin{abstract}
-{In this paper, we propose a procedure to find differential networks in partial correlations from high-dimensional multivariate data. We estimate the precision matrices and their differences by solving a penalized regression-based least square problem. We assume sparse differences between two precision matrices, not matrices themselves. Thus, we impose $\ell_2$ penalty on
-partial correlations from elements of precision matrices while $\ell_1$ penalty on their differences. We apply the proposed procedure to finding differential functional connectivity in the resting brain between normal and Alzheimer's disease patients.}
+{In this paper, we propose a procedure to find differential networks between two graphs from high-dimensional multivariate data. We estimate the precision matrices and their differences by solving a penalized regression-based least square problem. We assume sparsity on differences between two graphs, not graphs themselves. Thus, we impose an $\ell_2$ penalty on
+partial correlations from elements of precision matrices and an $\ell_1$ penalty on their differences. We apply the proposed procedure to finding differential functional connectivity between healthy individuals and those suffering from Alzheimer's disease.}
 { Precision matrix; fMRI; functional connectivity; Gaussian graphical model; $\ell_1$ penalty; penalized least squares.}
 \end{abstract}
 
@@ -116,65 +120,24 @@ partial correlations from elements of precision matrices while $\ell_1$ penalty 
 %\baselineskip24pt
 \section{Introduction}
 
-\iffalse
-At the macroscopic scale, the human connectome is an undirected weighted graph that represents connectivity between every pair of anatomically distinct areas in the brain\cite{Craddock2013Connectomes}. For functional connectomes, brain areas correspond to functionally homogeneous patches of cortex and edges correspond to functional connectivity between nodes, which is inferred from temporal correlations between time series of activity measured at the corresponding brain areas\cite{Craddock2013Connectomes,Varoquaux2013}. Functional connectivity can be estimated using data from a variety of different imaging modalities and experimental conditions, but resting state functional magnetic resonance imaging (rsfMRI) data is popularly used given its noninvasiveness, high spatial resolution, and general applicability across individuals regardless of age, brain state, or disability\cite{Biswal1995}. When estimated in these ways, human connectome graphs have been shown to be reproducible across time\cite{shehzad2009} and individuals\cite{damasoix}, which is driving considerable optimism that they can provide stable markers of inter-individual variability in phenotype (e.g., disease states, disease severity, IQ, personality, etc). Mapping phenotypes to connectome graphs is a challenging problem that is commonly reduced to estimating a graph per individual using bivariate Pearson's correlations and submitting the results to edge-wise univariate statistical tests \cite{craddock2013connectome, varoquaux2013}. This methodology is problematic for two reasons: bivariate Pearson's correlation cannot distinguish the shared variance between two areas from their common variance with other brain areas and it results in a very large number of comparisons that serve to reduce detection power. 
+At the macroscopic scale, the human connectome is an undirected weighted graph that represents connectivity between every pair of anatomically distinct areas in the brain \citep{Craddock2013Connectomes}. For functional connectomes, brain areas correspond to functionally homogeneous patches of cortex and edges correspond to functional connectivity between nodes, which is inferred from temporal correlations between time series of activity measured at the corresponding brain areas \citep{Craddock2013Connectomes,Varoquaux2013}. Functional connectivity can be estimated using data from a variety of different imaging modalities and experimental conditions, but resting state functional magnetic resonance imaging (rsfMRI) data is popularly used given its noninvasiveness, high spatial resolution, and general applicability across individuals regardless of age, brain state, or disability \citep{Biswal1995}. When estimated in these ways, human connectome graphs have been shown to be reproducible across time \citep{shehzad2009} and individuals \citep{damasoix}, which is driving considerable optimism that they can provide stable markers of inter-individual variability in phenotype (e.g., disease states, disease severity, IQ, personality, etc). Mapping phenotypes to connectome graphs is a challenging problem that is commonly reduced to estimating a graph per individual using bivariate Pearson's correlations and submitting the results to edge-wise univariate statistical tests \citep{Craddock2013Connectomes,Varoquaux2013}. This methodology is problematic for two reasons: bivariate Pearson's correlation cannot distinguish the shared variance between two areas from their common variance with other brain areas and it results in a very large number of comparisons that serve to reduce detection power.
 
-Partial correlation is an attractive alternative to Pearson's correlation for estimating functional connectome graphs, since it is not prone to artefactual correlations arising from shared variance with brain areas other than those being compared\cite{Varoquaux2013}. Although the entire partial correlation matrix can be obtained by from the inverse of the covariance matrix (precision matrix), rsfMRI data tends to contain many more brain areas than independent observations ($p >> n$), resulting in an ill-posed problem. This problem has been addressed in the neuroimaging literature by using regularized estimators of the precision matrix, such as Graphical LASSO \citep{Meinshausen:2006,Yuan:2007,Rothman:2008}, that enforce sparsity to find a unique solution.  
-
-
-1. Can use partial correlation to estimate each individual's connectome separately, and submit results to group level analysis. Separately estimating the precision matrix for each subject, it is not quite clear how the group level precision matrix should be estimated - the mean of the subject level matrices may not be the best thing.  - these estimates are noisy, and could be improved by sharing information across individuals
-
-2. Can estimate individual level precisions with a group regularization, enforces the same sparsity structure for each individual. This method enforces a high level of sparsity which may not be ecologically valid, because brain networks maybe more dense than this method assumes. -- requires an assumption of level of sparsity and normality
-
-3. Rather than focusing on the estimation of precision matrices for each individual or each group, we propose to directly estimate the differences between groups. This enables us to relax the sparsity requirement for each group precision matrix, and instead impose this sparsity constraint on the between-group differences. Sparsity of the differences will improve the interpretability of the results.
-
-
-
-since it distinguishes 
-
-measures the linear dependency between two brain areas independent of commmon variance from all other areas of the brain. 
-\fi
-
-
-At the macroscopic scale, the human connectome is an undirected weighted graph that represents connectivity between every pair of anatomically distinct areas in the brain \citep{Craddock2013Connectomes}. For functional connectomes, brain areas correspond to functionally homogeneous patches of cortex and edges correspond to functional connectivity between nodes, which is inferred from temporal correlations between time series of activity measured at the corresponding brain areas \citep{Craddock2013Connectomes,Varoquaux2013}. 
-
-Functional connectivity can be estimated using data from a variety of different imaging modalities and experimental conditions, but resting state functional magnetic resonance imaging (rsfMRI) data is popularly used given its noninvasiveness, high spatial resolution, and general applicability across individuals regardless of age, brain state, or disability. When estimated in these ways, human connectome graphs have been shown to be reproducible across time \citep{shehzad2009} and individuals \citep{damasoix}, which is driving considerable optimism that they can provide stable markers of inter-individual variability in phenotype (e.g., disease states, disease severity, IQ, personality, etc). 
-Thus, this study is motivated by a rsfMRI study of Alzheimer's disease (AD). Researchers are interested to find whether and where there is any abnormality in brain function of patients with AD based on rsfMRI. In other words, people are interested to estimate intrinsic functional connectivity in brain and/or their differences between different populations, e.g., healthy control (HC) versus patients with AD.
-
-Mapping phenotypes to connectome graphs is a challenging problem that is commonly reduced to estimating a graph per individual using bivariate Pearson's correlations and submitting the results to edge-wise univariate statistical tests. This methodology is problematic for two reasons: bivariate Pearson's correlation cannot distinguish the shared variance between two areas from their common variance with other brain areas and it results in a very large number of comparisons that serve to reduce detection power. 
-Partial correlation is an attractive alternative to Pearson's correlation for estimating functional connectome graphs, since it is not prone to artefactual correlations arising from shared variance with brain areas other than those being compared. 
-In addition, a population-level inference on graphs is needed in comparing them.
-
-Statistically, the problem of finding abnormality in AD based on rsfMRI can be viewed as estimating two partial correlation graphs and their differences. 
-Although the entire partial correlation matrix can be obtained from the inverse of the covariance matrix (precision matrix), rsfMRI data tends to contain many more brain areas than independent observations ($p >> n$), resulting in an ill-posed problem. 
-
-In recent literature, a number of methods have been proposed to estimate the precision matrix for high-dimensional data. Many of proposed methods are based on Gaussian graphical model \citep{Meinshausen:2006,Yuan:2007,Rothman:2008}, that enforce sparsity to find a unique solution. 
-Later, \citet{Danaher:2014} proposed the joint graphical lasso (JGL) method, which has some advantages over the approach of separate estimates in the flexibility to control both the sparsity of precision matrices and their similarity.
-In detail, assume that data of size $n_i$ are from $N \big(0, \Sigma_i\big)$ for the $i$-th population, $i=1,2,\ldots, I$.
-Let $S_i$ be the sample covariance matrix of the $i$-th population and $\Omega_i\equiv \Sigma_i^{-1}$ be the precision matrix of the $i$-th population.
-JGL method maximizes
+Partial correlation is an attractive alternative to Pearson's correlation for estimating functional connectome graphs, since it is not prone to artefactual correlations arising from shared variance with brain areas other than those being compared \citep{Varoquaux2013}. Although the entire partial correlation matrix can be obtained from the inverse of the covariance matrix (precision matrix), rsfMRI data tends to contain many more brain areas than observations ($p >> n$), resulting in an ill-posed problem. This problem has been addressed in the neuroimaging literature by using regularized estimators of the precision matrix, such as Graphical LASSO \citep{Meinshausen:2006,Yuan:2007,Rothman:2008}, that enforce sparsity to find a unique solution.  Theses methods tend to result in noise estimates of individual-level precision matrices, which can be improved by sharing information across individuals. The joint graphical lasso (JGL) is one such method proposed by \citet{Danaher:2014} that incorporates flexibility to control both the sparsity of precision matrices and their similarity. In detail, assume that data of size $n_i$ are from $N \big(0, \Sigma_i\big)$ for the $i$-th population, $i=1,2,\ldots, I$. Let $S_i$ be the sample covariance matrix of the $i$-th population and $\Omega_i\equiv \Sigma_i^{-1}$ be the precision matrix of the $i$-th population. The JGL method maximizes
 \begin{eqnarray*}
 l(\Omega_1,\ldots,\Omega_I)
 &=& \sum_{i=1}^I n_i \Big\{ \log\det
 \Omega_i - {\rm tr}(\Omega_i {S}_i ) \Big\}  - \mathcal{P} \big( \Omega_1,\ldots,\Omega_I \big),
 \end{eqnarray*}
-where $\det \Omega_i$ denotes the determinant of $\Omega_i$, ${\rm tr}(A)$ is the trace of $A$, and $\mathcal{P} \big( \Omega_1,\ldots,\Omega_I \big)$ is a given penalty function. JGL method considers two useful penalties, the fused lasso penalty to find differences in precision matrices and the group lasso penalty to find a common non-sparse structure.
-However, these graphical models enforces a high level of sparsity which may not be ecologically valid, because brain networks may be more dense than this method assumes \citep{Ryali2012}.
+where $\det \Omega_i$ denotes the determinant of $\Omega_i$, ${\rm tr}(A)$ is the trace of $A$, and $\mathcal{P} \big( \Omega_1,\ldots,\Omega_I \big)$ is a given penalty function. The JGL method includes two useful penalties, the fused lasso penalty on the individual precision matrices and the group lasso penalty to find a common non-sparse structure. Although these graphical models improve estimates of individual connectomes they enforce a high level of sparsity on the precision matrices that may not be ecologically valid --- brain networks may be more dense than these methods assume \citep{Ryali2012}. Additionally, these methods do not provide a method for performing inferences on differential graphs between groups.
 
-Alternative approach would be to directly estimate the differences.  \citet{Zhao:2014} proposed to directly estimate the differences between two precision matrices as the solution to
+Rather than focusing on the estimation of precision matrices for each individual or each group, an alternative approach is to directly estimate the differences between population graphs. This enables us to relax the sparsity requirement for each group precision matrix, and instead impose this sparsity constraint on the between-group differences.  \citet{Zhao:2014} proposed to directly estimate the differences between two precision matrices as the solution to
 \begin{equation} \label{eqn:direct} 
 \mbox{minimize }  \big\| \Delta\big\|_1 \quad 
 \mbox{subject to} ~~ \big\| {\bf S}_1 \Delta {\bf S}_2 -  {\bf S}_1 + {\bf S}_2 \big\|_{\infty} \le \lambda,
 \end{equation} 
-where $\Delta = \Omega_2-\Omega_1$ and $\lambda$ is a non-negative tuning parameter. 
-To solve (\ref{eqn:direct}), they rewrite the problem as the well-known regression problem named as the Dantizg selector by \citet{Candes:2005}.
-An obvious advantage of this over the graphical model is that it does not require to estimate the precision matrices. Hence, the sparsity on the precision matrices is not required, which allows networks to have hubs. It also dose not require the normality. However, their method demands costly memory and time as stated in their study. This might not be practical in rsfMRI study since both $p$ and $n$ can be large.
+where $\Delta = \Omega_2-\Omega_1$ and $\lambda$ is a non-negative tuning parameter. To solve (\ref{eqn:direct}), they reformulate the problem as the well-known Dantizg selector regression problem \citep{Candes:2005}. An obvious advantages of this approach over graphical models is that it does not require estimating individual precision matrices, and hence does not impose sparsity on these matrices. Additionally, it does not require normality or an additional level of population-inference to define group differences, and the sparsity imposed on the identified differences improves their neuroscientific interpretability. However, this method requires substantial computer memory and computational time, which makes it unwieldy for rsfMRI population studies with large $p$ and $n$.
 
-In this paper we propose a computationally efficient method to find abnormality in the brain functional connectivity of patients with AD for high-dimensional rsfMRI study.
-Rather than focusing on the estimation of precision matrices for each individual or each group, we propose to directly estimate the differences between groups as in \citet{Zhao:2014}. This enables us to relax the sparsity requirement for each group precision matrix, and instead impose the sparsity constraint on the between-group differences. Sparsity of the differences will improve the interpretability of the results.
-
-Our work here exploits the penalized regression approach, which is computationally efficient comparing to \citet{Zhao:2014}. The penalized regression solves a least square problem to estimate sparse precision matrix $\Omega=\big(\omega_{kl} \big)_{1\le k,l\le p}$. 
-In detail, suppose ${\bf X}= (X_1 ,\cdots, X_p)^T$ is a random vector of mean $0$ and a positive definite covariance matrix $\Sigma$.  
+In this paper we propose a penalized regression approach for directly estimating population differences in connectome graphs that is more computationally efficient than \citet{Zhao:2014}. The penalized regression solves a least square problem to estimate a sparse precision matrix $\Omega=\big(\omega_{kl} \big)_{1\le k,l\le p}$. In detail, suppose ${\bf X}= (X_1 ,\cdots, X_p)^T$ is a random vector of mean $0$ and a positive definite covariance matrix $\Sigma$.  
 Denote the partial correlation between $x_i$ and $x_j$ by $\rho_{ij}$.
 It is known that, for every $k=1,2,\ldots,p$,
 \begin{equation} \label{eqn:pcorr_reg}
@@ -194,22 +157,16 @@ Later, \citet{Peng:2009} proposed the sparse partial correlation estimation (SPA
 \beta_{kl}
      x_{jl}\big)^2 \right\} + \lambda \sum_{k=1}^p\sum_{l \neq k} |\rho_{kl}|,
 \end{equation}
-where $w_k$s are non-negative weights. 
-SPACE method has a couple of advantages over the method by \citet{Meinshausen:2006} in estimating the precision matrix and the graph structure. It allows the graph to have hubs and also provides a symmetric precision matrix by minimizing weighted sum of $p$ least squares. 
-More importantly, when weights $w_k= \omega^2_{kk}$ and imposing penalty on $\omega_{kl}$, the weighted sum of ({\ref{eqn:peng}) becomes convex and allows an algorithm to find the global optimum \citep{Khare2014}. 
-Hence, we extend SPACE to our differential network problem, i.e., estimating two partial correlation graphs and their differences.
+where $w_k$s are non-negative weights. The SPACE method has a couple of advantages over the method by \citet{Meinshausen:2006} for estimating precision matrices and graph structure. It allows the graph to have hubs and also provides a symmetric precision matrix by minimizing weighted sum of $p$ least squares. 
+More importantly, when weights $w_k= \omega^2_{kk}$ and imposing a penalty on $\omega_{kl}$, the weighted sum of (\ref{eqn:peng}) becomes convex, which enables a global optimum to be found \citep{Khare2014}. Hence, we extend SPACE to our differential network problem, i.e., estimating the differences between two partial correlation graphs, namely, JPACE (Joint PArtial Correlation Estimation).
 
-Suppose ${\bf X}^{(i)} =\big(X^{(i)}_{1},X^{(i)}_{2},\ldots,X^{(i)}_{p}\big)$ for $i=1,2$ is 
-a random vector from the $i$-th population (e.g., $i=1$ for the normal population and $i=2$ for the population of the patients with AD). 
-Assume that ${\bf X}^{(i)} \sim (0,\Sigma_i)$ and the precision matrix $\Omega_i=\big(\omega_{kl}^{(i)} \big)_{1\le k,l\le p}$. 
-Then, for every
-$k=1,2,\ldots,p$,
+Suppose ${\bf X}^{(i)} =\big(X^{(i)}_{1},X^{(i)}_{2},\ldots,X^{(i)}_{p}\big)$ for $i=1,2$ is a random vector from the $i$-th population (e.g., $i=1$ for one population and $i=2$ for another). Assume that ${\bf X}^{(i)} \sim (0,\Sigma_i)$ and the precision matrix $\Omega_i=\big(\omega_{kl}^{(i)} \big)_{1\le k,l\le p}$. Then, for every $k=1,2,\ldots,p$,
 \begin{eqnarray} 
 X^{(1)}_{k} &=& \sum_{l \neq k} \beta^{(1)}_{kl} X^{(1)}_{l} + \epsilon^{(1)}_{k} = \sum_{l \neq k} \rho^{(1)}_{kl} \tilde{X}^{(1)}_{l(k)} + \epsilon^{(1)}_{k}, \label{eqn:iden} \nonumber\\
 X^{(2)}_{k} &=& \sum_{l \neq k} \beta^{(2)}_{kl} X^{(2)}_{l} + \epsilon^{(2)}_{k} =\sum_{l \neq k} \rho^{(2)}_{kl} \tilde{X}^{(2)}_{l(k)} + \epsilon^{(2)}_{k}, \nonumber
 \end{eqnarray}
 where $\tilde{X}^{(i)}_{l(k)}= \sqrt{\frac{\omega^{(i)}_{ll}}{\omega^{(i)}_{kk}} } X^{(i)}_{l}$. 
-In this paper, we propose to minimize a penalized regression function:
+In this paper, we solve these equations by minimizing a penalized regression function:
 \begin{equation} \label{eqn:main}
 \begin{array}{lll}  \medskip
 && \displaystyle
@@ -223,18 +180,16 @@ where ${\bf X}^{(i)}_j=\big(X_{j1}^{(i)}, X_{j2}^{(i)},\ldots,X_{jp}^{(i)}\big)$
 of ${\bf X}^{(i)}$ for $j=1,2,\ldots,n_i$, $w^{(i)}_{k}$s are nonnegative weights, $\lambda_i$s are non-negative tuning parameters, $ \mathcal{P}_1(\cdot) ,
 \mathcal{P}_2(\cdot) $ are penalty functions and $\bs{\rho^{(i)}}=(\rho^{(i)}_{12},\ldots,\rho^{(i)}_{(p-1)p})^T$. 
 
-
-The paper is organized as follows. In Section 2, we describe the proposed model and the algorithm to solve the penalized regression problem that we consider. We also discuss the selection of tuning parameters. In Section 3, we numerically investigate the performance of the proposed procedure along with the comparison to other methods. In Section 4, we apply our proposal to a resting-state fMRI study for AD. In this example, we find the differences in functional connectivity in resting brain between healthy control and patients with AD. In Section 5, we conclude the paper with a brief discussion.
+The paper is organized as follows. In Section 2, we describe the proposed model and the algorithm to solve the penalized regression problem under consideration and discuss the selection of tuning parameters. In Section 3, we numerically investigate the performance of the proposed procedure along with the comparison to other methods. In Section 4, we apply our proposal to a resting-state fMRI dataset to identify differences in connectome graphs between patients suffering from Alzheimer's disease (AD) and healthy controls (HC). In Section 5, we conclude the paper with a brief discussion.
 
 
 \section{Method}
 
-
 \subsection{Model}
-The $p$-variate vector of observations on the $j$-th subject in the $i$-th network is denoted by $\mathbf{Y}^{(i)}_j = (Y_{j1}^{(i)}, \ldots, Y_{jp}^{(i)})^{\rm
+The $p$-variate vector of observations on the $j$-th individual in the $i$-th population is denoted by $\mathbf{Y}^{(i)}_j = (Y_{j1}^{(i)}, \ldots, Y_{jp}^{(i)})^{\rm
 T}$, $j=1, \ldots, n_i$, and $i=1,2$.
 When random samples $\mathbf{Y}^{(i)}_1, \dots, \mathbf{Y}^{(i)}_{n_i}$ from
-the $i$-th network follow the $p$-variate distribution 
+the $i$-th population follow the $p$-variate distribution 
 $(\bs{\mu}_i,\bs{\Sigma}_i)$ with $\bs{\Omega}_i=
 \big( \omega^{(i)}_{kl} \big)_{1 \le k,l \le p}$,
 we can transform $\mathbf{Y}^{(i)}_{j}$ into $\tilde{\mathbf{Y}}^{(i)}_j = \mathbf{Y}^{(i)}_j - \frac{1}{n_i} \sum_{j=1}^{n_i} \mathbf{Y}^{(i)}_j$,
@@ -247,7 +202,7 @@ Then, we concatenate all observations of $p$ variates into a vector,
 $\mathbf{Y} = \big(
  {\mathbf{Y}^{(1)}_{\bullet 1}}^T, \ldots,{\mathbf{Y}^{(1)}_{\bullet p}}^T;
  {\mathbf{Y}^{(2)}_{\bullet 1}}^T, \ldots, {\mathbf{Y}^{(2)}_{\bullet p}}^T \big)^T$. 
-Likewise, diagonal elements of two precision matrices are vectorized as
+Likewise, diagonal elements of the two populations' precision matrices are vectorized as
 $\bs{\omega}_D=\big(\bs{\omega}_{D_1}^T, \bs{\omega}_{D_2}^T\big)^T =
 (\omega^{(1)}_{11},\ldots,\omega^{(1)}_{pp};\omega^{(2)}_{11},\ldots,\omega^{(2)}_{pp})^T.$
 
@@ -329,8 +284,7 @@ and  $\lambda_1$ and $\lambda_2$ are nonnegative tuning parameters.
 
 We have several choices of penalty functions  $\mathcal{P}_1\big( \bs{\rho}^{(1)},\bs{\rho}^{(2)} \big)$ and $\mathcal{P}_2 \big(\bs{\rho}^{(2)} - \bs{\rho}^{(1)} \big)$. 
 For example, we can achieve sparsity in both $\Omega_1$ and $\Omega_2$ by using $\ell_1$ penalty as $\mathcal{P}_1\big( \bs{\rho}^{(1)},\bs{\rho}^{(2)} \big)$.
-Albeit $\ell_1$ penalty is very popular nowadays, $\ell_1$ penalty on $\Omega_1$ and $\Omega_2$  in fMRI study is not desirable as discussed in the previous section since functional connectivity networks in brain tend to have hubs and be dense. 
-Hence, we assume that functional connectivity in brain would be dense rather than sparse \citep{Ryali2012}, which leads us to use $\ell_2$ penalty (ridge penalty) for $\mathcal{P}_1\big( \bs{\rho}^{(1)},\bs{\rho}^{(2)} \big)$ to have well defined estimate of the precision matrix. We expect sparse in differences between two groups by employing $\ell_1$ penalty only for $\mathcal{P}_2 \big(
+Although the $\ell_1$ penalty is currently very popular, applying it to  $\Omega_1$ and $\Omega_2$  in our application is not desirable as discussed in the previous section since connectome graphs tend to have hubs and be dense \citep{Ryali2012}. Incorporating this information leads us to use the $\ell_2$ penalty (ridge penalty) for $\mathcal{P}_1\big( \bs{\rho}^{(1)},\bs{\rho}^{(2)} \big)$ to have a well-defined estimate of the precision matrix. We enforce sparsity in the differences between population connectome graphs by employing $\ell_1$ penalty only for $\mathcal{P}_2 \big(
 \bs{\rho}^{(2)} - \bs{\rho}^{(1)} \big)$.
 
 However, it is known that ${\mathcal L}(\bs{\rho},\bs{\omega}_D~;\mathbf{Y},\lambda_1,\lambda_2,\mathbf{w})$ is not convex with respect to both $\bs{\rho}$ and $\bs{\omega}_D$ \citep{Khare2014}.
@@ -338,7 +292,7 @@ The objective function (\ref{eqn:obj}) is only convex with respect to either
 (i) $\bs{\rho}$ with a fixed $\bs{\omega}_D$ or (ii) $\Omega_1$ and $\Omega_2$ 
 with weights $w_{k}^{(i)} = (\omega^{(i)}_{kk})^2$ and $\lambda_2=0$. 
 
-Thus, we propose a two-step procedure (ridge/fusion-step) to find the differences of partial correlations between two networks.
+Thus, we propose a two-step procedure (ridge/fusion-step) to find the differences of partial correlations between two graphs.
 In the first step (ridge-step), we set $w_k^{(i)}=(\omega_{kk}^{(i)})^2$ and $\lambda_2=0$. 
 Then, simple algebra leads us to estimate $\Omega_1$ and $\Omega_2$ by solving the minimization problem of the function 
 \begin{equation} \label{eqn:obj1}
@@ -350,7 +304,7 @@ Then, simple algebra leads us to estimate $\Omega_1$ and $\Omega_2$ by solving t
 + \lambda_1 \sum_{i=1}^2 \sum_{k<l} (\omega^{(i)}_{kl})^2.
 \end{array}
 \end{equation}
-For each $\Omega_i$, the minimization problem can be solved efficiently using the hybrid of the block coordinate descent \citep{Khare2014} and the least squares QR (LSQR) algorithm \citep{Paige:1982}. 
+For each $\Omega_i$, the minimization problem can be solved efficiently using a hybrid of the block coordinate descent \citep{Khare2014} and the least squares QR (LSQR) algorithm \citep{Paige:1982}. 
 During this ridge-step, we choose a tuning parameter $\lambda_1$ by the $k$-fold cross validation. 
 
 In the second step (fusion-step), since $\rho_{kl}^{(i)}=-\omega_{kl}^{(i)}/\sqrt{\omega_{kk}^{(i)} \omega_{ll}^{(i)}}$, we estimate $\bs{\rho}$ by minimizing
@@ -362,16 +316,13 @@ In the second step (fusion-step), since $\rho_{kl}^{(i)}=-\omega_{kl}^{(i)}/\sqr
 + \lambda_1^* \sum_{i=1}^2 \sum_{k<l} \hat{\omega}^{(i)}_{kk} \hat{\omega}^{(i)}_{ll} (\rho^{(i)}_{kl})^2  + \lambda_2 \sum_{k<l} \big| \rho^{(2)}_{kl} - \rho^{(1)}_{kl} \big|,
 \end{array} \medskip
 \end{equation}
-where  $\hat{\bs{\omega}}_D$ is the estimate of $\bs{\omega}_D$ and $\lambda_1^*$ is the tuning parameter chosen in the ridge-step. 
-It can be solved by using the block-wise coordinate descent algorithm.
-The block-wise coordinate descent algorithm to solve the problem are described with details in the next section.
+where  $\hat{\bs{\omega}}_D$ is the estimate of $\bs{\omega}_D$ and $\lambda_1^*$ is the tuning parameter chosen in the ridge-step. This can be solved using the block-wise coordinate descent (BCD) algorithm described in the next section.
 
 \subsection{Block-wise coordinate descent algorithm}
 
-In this section, we describe the algorithms applied in each step.
 For the ridge-step, we consider the hybrid of BCD and LSQR algorithms to minimize the function ${\mathcal L}_1$ in \eqref{eqn:obj1}.
 The BCD algorithm for the ridge-step alternately updates the diagonal elements ${\omega}^{(i)}_{kk}$s and the off-diagonal elements ${\omega}^{(i)}_{kl}$s of $\Omega_i$ for $i=1,2$.
-To be specific, for given the current estimates $\hat{\omega}^{(i)}_{kl}$s, the partial derivative of ${\mathcal L}_1$ with respect to ${\omega}^{(i)}_{kk}$ is
+Specifically, for the given current estimates $\hat{\omega}^{(i)}_{kl}$s, the partial derivative of ${\mathcal L}_1$ with respect to ${\omega}^{(i)}_{kk}$ is
 \begin{equation} \label{eqn:pd_diag} \nonumber
 \frac{\partial {\mathcal L}_1}{\partial \omega^{(i)}_{kk}}
 = -\frac{n_i}{\omega^{(i)}_{kk}} 
@@ -421,14 +372,14 @@ $
 $   
 and
 $\bs{\omega}_{off_i} = (\omega^{(i)}_{12}, \omega^{(i)}_{13},\ldots,\omega^{(i)}_{(p-1)p})^T$.
-This formulation \eqref{eqn:lsqr} is adequate for applying the LSQR algorithm, which is numerically stable and efficient (see \cite{Paige:1982} for details about LSQR). 
+Equation \eqref{eqn:lsqr} is adequate for applying the LSQR algorithm, which is numerically stable and efficient (see \cite{Paige:1982} for details about LSQR). 
 In this formulation, the matrix ${\mathcal X}_i$ has a lot of zeros and is well-structured.
-Thus, we don't need to store ${\mathcal X}_i$ directly in the memory and can reduce the cost of the computation for ${\mathcal X}_i {\bf u}$ and ${\mathcal X}_i^T {\bf v}$ using its sparse structure, 
+Thus, we don't need to store ${\mathcal X}_i$ directly in memory and can reduce the cost of the computation for ${\mathcal X}_i {\bf u}$ and ${\mathcal X}_i^T {\bf v}$ using its sparse structure, 
 where ${\bf u} \in \mathbb{R}^{p(p-1)/2}$ and ${\bf v} \in \mathbb{R}^{n_i p}$.
-Note that the CD algorithm can be applied to solve the minimization problem in \eqref{eqn:lsqr}, but the CD algorithm is slower than the LSQR algorithm in this case.
+Note that coordinate descent can be applied to solve the minimization problem in \eqref{eqn:lsqr}, but it is slower than the LSQR algorithm in this case.
 
 
-In the fusion-step, we also consider the BCD algorithm to estimate ${\bs{\rho}}$ by minimizing
+In the fusion-step, we also use the BCD algorithm to estimate ${\bs{\rho}}$ by minimizing
 ${\mathcal L}_2(\bs{\rho};\lambda_2)\equiv {\mathcal L}_2(\bs{\rho};\hat{\bs{\omega}},\mathbf{Y},\lambda_1^*,\lambda_2)$ in \eqref{eqn:obj2}. The objective function ${\mathcal L}_2(\bs{\rho};\lambda_2)$ is convex with respect to $\bs{\rho}$ as well as the penalty functions are convex and separable for each $\bs{\rho}_{kl} = (\rho^{(1)}_{kl}, \rho^{(2)}_{kl})^T$. Thus, we can obtain the minimizer $\hat{\bs{\rho}}$ of ${\mathcal L}_2(\bs{\rho};\lambda_2)$ by iteratively solving the problem $\partial {\mathcal L}(\bs{\rho};\lambda_2) / \partial \bs{\rho}_{kl} = {\bf 0}$ for $1 \leq k <l \leq p $.
 
 
@@ -476,10 +427,9 @@ We repeat the second step for $1\le k<l \le p$ until convergence occurs.
 
 
 \subsection{Selection of tuning parameters}
-Two tuning parameters $\lambda_1, \lambda_2$ need to be determined.
-We note that $\lambda_1$ regularizes off-diagonal elements of two precision matrices and $\lambda_2$ regularized the differences between two matrices.
-Therefore, we select tuning parameters in separate manner.
-The tuning parameter $\lambda_1$ is selected in the ridge-step by minimizing the $m$-fold cross validation error
+The proposed method requires the specification of two tuning parameters $\lambda_1, \lambda_2$. $\lambda_1$ regularizes the off-diagonal elements of the population precision matrices and $\lambda_2$ regularizes the differences between the matrices.
+Therefore, we use different techniques to select tuning parameters.
+The tuning parameter $\lambda_1$ is selected in the ridge-step by minimizing $m$-fold cross validation error
 \begin{equation}
 {\rm CV}(\lambda_1) = \sum_{t=1}^m \sum_{i=1}^2 \sum_{k=1}^p 
 \big\| {\bf Y}^{(i)}_{\bullet k,(t)} - \sum_{l \neq k} \widehat{\rho}^{(i)}_{kl,(-t)} {\bf Y}^{(i)}_{\bullet l(k),(t)} \big\|_2^2, 
@@ -487,8 +437,7 @@ The tuning parameter $\lambda_1$ is selected in the ridge-step by minimizing the
 where ${\bf Y}^{(i)}_{\bullet k,(t)}$ is the $t$-th test samples from $m$-fold cross validation for the $k$-th variable observed from the $i$-th group (network) and $\widehat{\rho}^{(i)}_{kl,(-t)} $ is the estimated $(k,l)$-th partial coefficient based on the samples removing the $t$-th test sample. 
 
 
-Given $\lambda_1^*$, we select the tuning parameter $\lambda_2$ in the fusion-step based on an approximation of the AIC. 
-The approximation of the AIC is
+Given $\lambda_1^*$, we select the tuning parameter $\lambda_2$ in the fusion-step based on an approximation of the Akaike information criterion (AIC):
 \begin{equation} \nonumber
 {\rm AIC}(\lambda_1^*,\lambda_2)=\sum_{k=1}^{p} {\rm AIC}_k(\lambda_1^*,\lambda_2),
 \end{equation}
@@ -526,8 +475,8 @@ We select $\lambda_1$ and $\lambda_2$ to minimize ${\rm AIC}(\lambda_1,\lambda_2
 
 \section{Simulation Study}
 
-We numerically compare the performance of the our method JPACE (Joint PArtial Correlation Estimation) to other existing methods in identifying a set of edges that differentiate one network from the other. Few methods are readily available in the literature for differential network analysis. 
-We consider joint graphical lasso (JGL) and direct estimation of differential networks (DDN). 
+We numerically compared the performance of the our method JPACE (Joint PArtial Correlation Estimation) to other existing methods for identifying a set of edges that differentiate one network from the other. Few methods are readily available in the literature for differential network analysis. 
+We consider joint graphical lasso (JGL) and direct estimation of differential networks (DDN) in this study. 
 We remark that the JPACE identifies the differences of partial correlations, which are invariant to the scale changes of variables, equivalently to the normalization of variables, while the two other methods find the differences between precision matrices.
 
 
@@ -537,8 +486,8 @@ we generate samples ${\bf Y}^{(i)}_1, {\bf Y}^{(i)}_2, \ldots,{\bf Y}^{(i)}_{n_i
 \begin{equation} \nonumber
 \sigma_{kl}^{(i)} = (\Omega_i)^{-1}_{kl} \big / \sqrt{(\Omega_i)^{-1}_{kk} (\Omega_i)^{-1}_{ll}} ,
 \end{equation}
-where $\Omega_i$ for $i=1,2$ are the precision matrices corresponding to given networks with $|E_d | = 15, 30$. Unlike the JPACE, the two existing methods are based on the estimation of the pecision matrix and could be sensitive to the estimates of variances in finding the differences. 
-In the study, we set the variance of each single variable as $1$ and this introduces many minor differences in off-diagonal elements of the precision matrices.
+where $\Omega_i$ for $i=1,2$ are the precision matrices corresponding to given networks with $|E_d | = 15, 30$. Unlike JPACE, JGL and DDN are based on estimating precision matrices and could be sensitive to the quality of variance estimates in finding the differences. 
+In the simulation, we set the variance of each single variable as $1$, which introduces many minor differences in off-diagonal elements of the precision matrices.
 
 For the choice of $\Omega_1$ and $\Omega_2$,  we consider four scenarios that can be categorized by (1) two degrees of the sparsity of the induced Gaussian graphs (either sparse or dense networks) and (2) two types of differences in precision matrices (either structural or directional/non-structural differences).
 In each scenario, we first construct the matrix $\Omega_1$ as a reference matrix, and generate $\Omega_2$ by randomly changing $|E_d|$ elements of $\Omega_1$ whose absolute values are larger than $0.3$.
@@ -546,10 +495,10 @@ The details of the four scenarios are as follows.
 
 
 \begin{itemize}
-\item[{\bf (C1)}] Sparse network having structural differences:
+\item[{\bf (C1)}] Sparse network with structural differences:
 
-To construct sparse networks, we can consider the protein-protein  interaction network, which is a well-known sparse network.
-In this scenario, we randomly select $p$ nodes and their edges from the Human Protein Reference Database (HPRD) \citep{Prasad:2009}  such that the reference networks has $3$-$8\%$ of all possible connections.
+We can model the sparse networks after well-known protein-protein interaction networks.
+In this scenario, we randomly select $p$ nodes and their edges from the Human Protein Reference Database (HPRD) \citep{Prasad:2009}  such that the reference network has $3$-$8\%$ of all possible connections.
 With the selected edge set $E$, we use a two-step procedure in \citet{Peng:2009} to assure the positive definiteness of the precision matrix.
 In the first step, we define an adjacent matrices $A=\big(a_{kl} \big)_{1 \le k,l \le p}$ from the reference network.
 In the second step, we generate a positive definite matrix 
@@ -567,7 +516,7 @@ $\Omega_2 = (\omega^{(2)}_{kl})_{1 \le k,l \le p}$
 with $\omega^{(2)}_{kl} = \omega^{(1)}_{kl}$ if $(k,l) \in E \setminus E_d$ and $\omega^{(2)}_{kl} = 0$ otherwise, where $E$ is the edge set of the reference network $\Omega_1$. 
 
 
-\item[{\bf (C2)}] Sparse network having directional differences:
+\item[{\bf (C2)}] Sparse network with directional differences:
 
 In this scenario, we use the same reference matrix $\Omega_1$ and the target edge set $E_d$ in {\bf (C1)}.
 To make directional differences between $\Omega_1$ and $\Omega_2$,
@@ -575,13 +524,13 @@ we define a matrix $\Omega_2 = (\omega^{(2)}_{kl})_{1 \le k,l \le p}$  as $\omeg
 $E$ is the edge set of the reference network $\Omega_1$. 
 
 
-\item[{\bf (C3)}] Dense network having structural differences:
+\item[{\bf (C3)}] Dense network with structural differences:
 
-We generate a network with $p$ nodes and an edge set $E$ having $20\%$ of all possible connections from Watts and Strogatz's small world network model \citep{Watts:1998}, which resembles a network of brain functions.
+We generate a network with $p$ nodes and an edge set $E$ having $20\%$ of all possible connections from Watts and Strogatz's small world network model \citep{Watts:1998}, which has many similarities with connectome graphs \citep{Eguiuz2005}.
 Due to the fact that the construction scheme of the precision matrix in {\bf (C1)}
 makes the magnitude of the elements small and hard to identify,
 we use a different scheme for constructing a reference matrix $\Omega_1$ for dense networks.
-In this scenario, we construct a reference matrix 
+In this scenario, we construct  
 $\Omega_1 = (\omega^{(1)}_{kl})_{1\le k,l \le p}$
 as \begin{equation} \nonumber
 \omega^{(1)}_{kl} = \left\{ \begin{array}{lll}
@@ -596,18 +545,15 @@ if $|\omega^{(1)}_{kl}| \le 0.1$ and $a_{kl}=1$ to assure its connection in the 
 From the reference matrix $\Omega_1$, we construct $\Omega_2$ by following the procedure described in {\bf (C1)}.
 
  
-\item[{\bf (C4)}] Dense network having directional differences:
+\item[{\bf (C4)}] Dense network with directional differences:
 
 With the  reference matrix $\Omega_1$ and the target edge set $E_d$ in {\bf (C3)}, we construct $\Omega_2$ by following the procedure described in {\bf (C2)}.
 
 \end{itemize}
 
-\noindent Figure 1 depicts an example of simulated networks of $p=50, 100, 150$ constructed by our scheme in separate panels. Gray lines indicate edges of $\Omega_1$ and black lines indicate differential edges (either structural or directional).
+\noindent Figure 1 depicts examples of simulated networks with $p=50, 100, 150$ constructed by our scheme. Gray lines indicate edges of $\Omega_1$ and black lines indicate differential edges (either structural or directional).
 
-To describe the performance, we consider four measures generally used in the classification:
-the sensitivity (SEN) known as the true positive rate; 
-the specificity (SPE) known as the true negative rate; 
-the false discovery rate (FDR); and Mathew's correlation coefficient (MCC) lies between -1 and +1, in which $+1$ represents the perfect classification, $-1$ denotes total mismatch, and $0$ indicates no better than random classification.
+We use four measures generally applied to classification problems to compare the performance of the three methods: sensitivity (SEN) also known as true positive rate;  specificity (SPE) also known as true negative rate; false discovery rate (FDR); and Mathew's correlation coefficient (MCC). MCC lies between -1 and +1, in which $+1$ represents the perfect classification, $-1$ denotes total mismatch, and $0$ indicates no better than random classification.
 Denote sets of the true and estimated differential edges by ${E}_d$ and $\widehat{E}_d$, respectively. Then, the measures are defined as follows:
 \begin{equation} \nonumber 
 \begin{array}{l} \medskip
@@ -627,95 +573,50 @@ ${\rm TN} = \big| E_{\rm d}^c  \big|$, and
 ${\rm FN} = \big| E_{\rm d}  \cap \widehat{E}_{\rm d}^c \big|$.
 
 
-In our simulation, we randomly generate 50 data sets for each scenario by our scheme.
-Then, we apply the proposed method JPACE, JGL, and DDN to the generated data sets.
-First, we compare the performance of 3 methods in the receive operating characteristic (ROC). To do so, we select the optimal tuning parameter $\lambda_1$s for JPACE and JGL with $\lambda_2 = 0$, respectively.
+In our simulation, we randomly generate 50 data sets for each scenario. We then apply the proposed method JPACE, JGL, and DDN to the generated data sets and we compare their performance using receive operating characteristic (ROC) curves. To do so, we select the optimal tuning parameter $\lambda_1$s for JPACE and JGL with $\lambda_2 = 0$, respectively.
 Then, we calculate SEN and SPE by varying $\lambda_2$ for JPACE and JGL. For DDN, SEN and SPE are calculated by varying $\lambda$.
 
-With the average of SEN and SPE over 50 replicates, we plot the ROC curves for all cases of $p=50$ in Figure 2 and report the area under the curve (AUC) for all cases of $p=50,100,150$ in Table 1.
+With the average of SEN and SPE over 50 replicates, we plot ROC curves for all cases of $p=50$ in Figure 2 and report the area under the curve (AUC) for all cases of $p=50,100,150$ in Table 1.
 In view of AUC, JPACE has a slightly better performance than JGL and DDN in all scenarios we considered.
 
 
-Table 2-5 summarize the results of four performance measures for each scenario with tuning parameters chosen by AIC. 
-In general, we notice that JGL detected more differential edges ($|\hat{E}_d|$) than the true number of differential edges $|E_d|$ while DDN detected less than $|E_d|$ (significantly less when $p=150$). 
-The number of differential edges by JPACE is between JGL and DDN in most cases.
-For example, $|\hat{E}_d|$ by JPACE, JGL, DDN are 28.26, 483.83, 16.64 on average when $p=150, |E_d|=30$ in Table 5. 
-This might be understandable considering that JPACE and DDN regularize the differences while JGL does not.
-The performance of all 3 methods are poor in the scenario of structural differences between two dense networks especially when $p \ge 100$.
-This might be due to weak differences which can be as small as 0.1.
-In view of $|\hat{E}_d|$, JPACE is favorable since $|\hat{E}_d|$ by JPACE is reasonably close to the true $|E_d|$ and robust to the sparsity of networks in most cases.
+Table 2-5 summarize the results the simulation study using tuning parameters chosen by AIC.  In general, JGL detected more differential edges ($|\hat{E}_d|$) than the true number of differential edges $|E_d|$ while DDN detected less than $|E_d|$ (significantly less when $p=150$). 
+The number of differential edges by JPACE is between JGL and DDN in most cases. For example, the number of different edges ($|\hat{E}_d|$) estimated by JPACE, JGL, DDN are 28.26, 483.83, 16.64 on average when $p=150, |E_d|=30$ in Table 5. This might be understandable considering that JPACE and DDN regularize the differences while JGL does not. The performance of all 3 methods are poor in the scenario of structural differences between two dense networks especially when $p \ge 100$. This might be due to weak differences for the graph edges, which can be as small as 0.1. In view of $|\hat{E}_d|$, JPACE is favorable since $|\hat{E}_d|$ by JPACE is reasonably close to the true $|E_d|$ and robust to the sparsity of networks in most cases.
 
-Because of much differences in $|\hat{E}_d|$ of 3 methods, we think that MCC is the measure to rank the performance of 3 methods.
-In terms of MCC, JPACE is best or comparable to JGL, DDN in all scenarios. JPACE is slightly worse than DDN for only one or two cases among 6 cases in each scenario, especially when $p=50$. 
+Because of numerous differences in $|\hat{E}_d|$ across scenarios for the 3 methods, MCC appears to be a bettter measure for ranking the methods' performance. In terms of MCC, JPACE is best or comparable to JGL, DDN in all scenarios. JPACE is slightly worse than DDN for only one or two of the 6 cases in each scenario, especially when $p=50$. 
 
-In terms of SPE and SEN, there is no overall winner among three methods; the winner changes depending on sparsities and types of differences. Even though, there is no overall winner, in view of SPE, JPACE is always ranked at the first or second best for both sparse and dense networks except the case of $p=50$ and $|E_d| = 30$. 
-We find the same pattern in SEN. In addition, DDN and JPACE are better than JGL for most cases.
+In terms of SPE and SEN, there is no overall winner among the three methods; the winner changes depending on sparsities and types of differences. Even though there is no overall winner, in view of SPE, JPACE is always ranked first or second best for both sparse and dense networks except for the case of $p=50$ and $|E_d| = 30$.  We find the same pattern in SEN. In addition, DDN and JPACE are better than JGL for most cases.
  
-
-Finally, we compare computing times (CPU time in seconds) of JPACE, JGL, and DDN. For a fair comparison, we set tuning parameters to have similar cardinalities of $|\hat{E}_d|$.
-To be specific, we set $\lambda_1 = 50, 100$, and $\lambda_2 = 50$ for JPACE; $\lambda_1 = 0.01, 0.1$ and  $\lambda_2 = 0.15$ for JGL; $\lambda = 1$ for DDN.
-JPACE algorithms are implemented in a statistical software R.
-We used the R-package `JGL' for JGL and the C-code running on R for DDN from \citet{Zhao:2014} available on github (https://github.com).
-The comparison was conducted on a linux workstation (CPU: AMD Opteron 6376X15 with 251.9 GB RAM). 
+Finally, we compare computing times (CPU time in seconds) of JPACE, JGL, and DDN. For a fair comparison, we set tuning parameters to have similar cardinalities of $|\hat{E}_d|$. Specifically, we set $\lambda_1 = 50, 100$, and $\lambda_2 = 50$ for JPACE; $\lambda_1 = 0.01, 0.1$ and  $\lambda_2 = 0.15$ for JGL; $\lambda = 1$ for DDN. JPACE algorithms are implemented in the R statistical software package. We used the R-package `JGL' for JGL and the C-code running from R for DDN from \citet{Zhao:2014} available on github (\url{https://github.com/sdzhao/dpm}). The comparison was conducted on a linux workstation (CPU: AMD Opteron 6376X15 with 251.9 GB RAM). 
 
 Figure 3 depicts the average computing times for all scenarios.
 For the sparse network, JPACE is slightly faster than JGL, while JPACE and JGL are much faster than DDN.
-When $p=150$, the average computing time of DDN is about $29,000$ seconds while the computing times of JPACE and JGL are less than $30$ seconds.
-DDN also needs the large amount of memory space to store the constraint matrix with size of $\frac{p(p+1)}{2} \times \frac{p(p+1)}{2}$, which makes unfeasible to run on a regular PC.
-In terms of computing times and memory efficiency, JPACE and JGL are much more favorable than DDN.
+When $p=150$, the average computing time of DDN is about $29,000$ seconds (8 hours) while the computing times of JPACE and JGL are less than $30$ seconds.
+DDN also needs a large amount of memory space to store the constraint matrix with size of $\frac{p(p+1)}{2} \times \frac{p(p+1)}{2}$, which makes unfeasible to run on conventional PCs. In terms of computing times and memory efficiency, JPACE and JGL are all favorable to DDN.
 
 In summary, JPACE is better than two other methods in view of AUC in all scenarios we consider. 
-In view of SPE, SEN, and MCC, JPACE is comparable or superior to DDN, and preforms superior to JGL. In view of the computing times and memory space, DDN is not practical, especially when $p$ is large.
+In view of SPE, SEN, and MCC, JPACE is comparable or superior to DDN, and preforms superior to JGL. In view of the computing times and memory requirements, DDN is not practical, especially when $p$ is large.
 
 
-\section{Application to Alzheimer's Disease study}
+\section{Application to Alzheimer's Disease}
 
-29 healthy controls (HC) with no history of head trauma, neurological disease or hearing disability and 33 patients with AD of mild, moderate and severe conditions were scanned.
-The National Institute of Neurological and Communicative Disorders and Stroke criteria \citep{McKhann} has been used to diagnose AD.
-All protocols in this study were approved by an Institutional Review Board.
-Written consent was obtained from the volunteer after the nature and possible consequences of the study were explained.
-All images were obtained on a Bruker Medspec 3T/60cm imaging system.
-Volunteers were positioned supine on the gantry with the head in a midline location in the coil.
-Subjects were instructed to rest with their eyes open while the word ``Relax" was centrally projected in white, against a black background during the scans.
-For each subject, we collected resting-state scans of 115 continuous EPI functional volumes (TR = 2000 ms; TE = 25 ms; flip angle = 90; 39 slices, matrix = 64x64, FOV = 192 mm; acquisition voxel size = 3x3x3 mm). 
+We evaluated JPACE in a real-world example to identify differences in functional connectivity between patients suffering from Alzheimer's Disease and healthy controls. The dataset included 5.5-minute resting state fMRI scans from 29 HC with no history of head trauma, neurological disease or hearing disability and 33 patients who suffer from mild, moderate, or severe AD as determined by the National Institute of Neurological and Communicative Disorders and Stroke criteria \citep{McKhann}. rsfMRI data were collected with written consent and in accordance with institutional review at University of Medicine and Dentistry of New Jersey on a Bruker Medspec 3T 60-cm bore imaging system using a echo planar imaging sequence that was optimized for blood-oxygenation-level-dependent contrast (repetition time = 2000 ms; echo time = 25 ms; flip angle = 90; 39 slices, matrix = 64x64, FOV = 192 mm; acquisition voxel size = 3x3x3 mm; number of volumes = 115).  Subjects were asked to rest with their eyes open while viewing the word ``Relax", which was centrally projected in white against a black background, during the scans.
 
-All data sets from each of the subjects were processed in an identical fashion using AFNI (version AFNI\_2008\_07\_18\_1710, \url{http://afni.nimh.nih.gov/afni}) and FSL (version 3.3, \url{www.fmrib.ox.ac.uk}).
-Images preprocessing using AFNI consisted of slice time correction, motion correction, mean-based intensity normalization, spatial smoothing, temporal high-pass and low-pass filtering, correction for time series autocorrelation (pre-whitening).
-Functional data were then transformed into MNI152 space using a 12 degree of freedom linear affine transformation implemented in FLIRT.
-Mean time series for each ROI (selection described below) were extracted from this standardized functional volume by averaging over all voxels within the region.
-To ensure that each time series represented regionally specific neural activity, the mean time series of each region of interest (ROI) was orthogonalized with respect to nine nuisance signals (global signal, white matter, cerebrospinal fluid, and six motion parameters).
+All data sets from each of the subjects were processed in an identical fashion using AFNI (version AFNI\_2008\_07\_18\_1710, \url{http://afni.nimh.nih.gov/afni}; \citealp{Cox1996}) and FSL (version 3.3, \url{www.fmrib.ox.ac.uk}; \citealp{Smith2012}). Image preprocessing in AFNI consisted of slice time correction, motion correction, mean-based intensity normalization, spatial smoothing by 6mm FWHM Gaussian kernel, temporal high-pass and low-pass filtering, and correction for time series autocorrelation (pre-whitening). Functional data were then transformed into MNI152 space using a 12 degree of freedom linear affine transformation calculated using FSL's FLIRT tool \citep{flirt}. Mean time series for each ROI (selection described below) were extracted from this standardized functional volume by averaging over all voxels within the region. To ensure that each time series represented regionally specific neural activity, the mean time series of each region of interest (ROI) was orthogonalized with respect to nine nuisance signals (global signal, white matter, cerebrospinal fluid, and six motion parameters). 
 
+In order to conduct an object survey of connectivity across the brain, while reducing the dimensionality of the resulting connectome graphs, graph nodes were chosen using 110 regions from the Harvard-Oxford (HO) structural atlas. HO is a probabilistic atlas that defines regions based on standard anatomical boundaries \citep{Kennedy, Makris}. A 25\%  threshold was applied to create a hard assignment for each region and the resulting map was bisected into left and right hemispheres at the mid line ($x=0$). Regional time series, standardized to zero mean and unit variance, concatenated across individuals for each population. In this way, the number of sample increases and only one null precision matrix need to be estimated. The resulting time series were submitted to JPACE to identify connectome graph differences between HC and AD populations.
 
-In view of the possible influence of ROI selection on functional connectivity, we adopted \cite{Kennedy} and \cite{Makris}.
-In order to conduct an objective survey of connectivity across the brain, we parcellated each hemisphere into 110 anatomical ROIs using the Harvard-Oxford Structural Atlas, a probabilistic atlas that defines regions based on standard anatomical boundaries.
-Masks were generated from the 25\% thresholded atlas provided by FSL, and masks overlapping the midline were divided at 0.
-ROIs were extracted from non-spatially smoothed data.
-We concatenated individual time series after standardization. In this way, the number of sample increases and only one null precision matrix need to be estimated. Finally, we applied the proposed method JPACE to them.
-
-Our method identified 44 abnormal functional connections in AD compared to HC (Table 2). 
-We visualized these connections in Figure \ref{axial}.
-We noticed that half of listed connections are inter-hemispheric links (Figure \ref{axial}) while the half are intra-hemispheric connections.
-ROI's listed in Table 2 are mainly related to the brain functions of motor, memory and sensory.
-Brain stem seems a hub of differential networks.
-The decrease in connections between ROI's related to memory such as Caudate, Parahippocampal Gyrus, Hippocampus, Temporal Pole could explain memory loss, the typical symptom of AD.
-A memory-related connection between Parahippocampal Gyrus and Brain-Stem becomes even close to zero in AD.
-As AD gets severe, patients have difficulty speaking, swallowing and walking as well as more serious memory loss. This would explain our finding abnormal connections between ROI's related to movement and cognitive functions, i.e., Brain-Stem, Thalamus, Insular Cortex, Putamen, Pallidum, Frontal Orbital Cortex, Temporal Fusiform Cortex, Parietal Operculum Cortex, Middle Temporal Gyrus, Temporal Gyrus, Juxtapositonal Lobule Cortex etc.
-Patients with AD also show mood and behavior changes which might be related to brain regions such as Accumbens and Subcallosal Cortex.
-
-
+Our method identified 44 connectome graph edges that differ between AD and HC (Table 2). Half of the identified connections are inter-hemispheric and the remaining differences are intra-hemispheric (Figure \ref{axial}). The regions subtending the identified links are mostly associated with motor, memory, emotion processing and sensory brain systems - all of which make sense given symptoms typically associated with AD \citep{ADimage}. The brain stem appears to be a central locus of the disorder, as it is involved in several connections that differ between groups. 
 
 \section{Conclusions}
 
-In this paper, we proposed a penalized regression-based procedure to find differential edges between two partial correlation networks.  
-We emphasize that sparsity is assumed only on the differences in the sense that two matrices differ from each other in a few elements, but no structural condition on the precision matrices. To this reason, the proposed method considers $\ell_2$ penalty for elements of precision matrices and $\ell_1$ penalty for their differences.
-The proposed penalty is suitable for our motivational example of finding abnormality in brain functional connectivity of patients with AD since we conjecture that normal brain network is dense rather than sparse, but strength or degree of only a few connections in patients might be different from in normals.
-We developed a block-wise coordinate descent algorithm to solve the penalized regression problem and two tuning parameters are chosen to minimize the ``AIC-type" criterion.
-Simulation study suggests that our method is superior to the existing methods, JGL and DDN when networks are dense (see Table 5). 
-Finally, we applied the proposed method to finding atypical functional connectivity in patients with AD based on resting-state fMRI. 
-We find that 44 out of all possible 5,995 connections (around 7\%) are different between HC and AD. Regions in brain of difference are mainly related to the functions of motor, memory and sensory. 
+In this paper, we proposed a penalized regression-based procedure to find differential edges between population-level partial correlation networks. We emphasize that sparsity is assumed only on the differences in the sense that two matrices differ from each other in a few elements, but not as a structural condition on the precision matrices. For this reason, the proposed method considers $\ell_2$ penalty for elements of precision matrices and $\ell_1$ penalty for their differences. The proposed penalty is suitable for our motivational example of finding differences in brain functional connectivity between patients with AD and HC since we conjecture that connectome graphs are dense rather than sparse, but that the strength or degree of only a few connections in patients might differ.  We developed a block-wise coordinate descent algorithm to solve the penalized regression problem and two tuning parameters are chosen by minimizing AIC. Our simulation study suggests that our method is superior to the existing methods, JGL and DDN when networks are dense (see Table 5). 
+Finally, we applied the proposed method to finding atypical functional connectivity in patients with AD based on resting-state fMRI. We find that 44 out of all possible 5,995 connections (around 7\%) are different between HC and AD. Regions in brain of difference are mainly related to the functions of motor, memory and sensory. 
+
+\section*{Funding}
+This work was supported by the National Research Foundation of Korea (NRF) funded by the Korea government (MEST) [grant No. 2011-0029104 given to JL]; and by the National Institute of Mental Health [BRAINS R01 (R01MH101555) given to RCC]. 
 
 \section*{Acknowledgements}
-JL is supported by the National Research Foundation of Korea(NRF) grant No. 2011-0029104 funded by the Korea government(MEST).
 
 \bibliographystyle{biorefs}
 \bibliography{refs}
@@ -753,7 +654,7 @@ JL is supported by the National Research Foundation of Korea(NRF) grant No. 2011
   \centerline{(f) Dense  ($p=150, |E| = 2250$)} \medskip
 \end{minipage}
 \caption{Examples of sparse in the left panels and dense networks 
-in the right panels for each case in the numerical study.
+in the right panels for each case in the simulation study.
 Black lines denote differential edges between two networks and 
 gray lines denote edges.}
 \end{center}
@@ -779,7 +680,7 @@ gray lines denote edges.}
   \centering   \centerline{\epsfig{file=fig/AUC_8.eps,width=0.9\textwidth,height=0.35\textheight}}
   \centerline{(d) {(\bf C4)} Dense, Direction}
 \end{minipage}
-\caption{Receive operating characteristics curves for the sparse and 
+\caption{Receiver operating characteristics curves for the sparse and 
 dense networks ($p=50, n=100$) in separate panels for each scenario. 
 Solid line represents JPACE($\lambda_1^*$), dashed line represents
 JGL($\lambda_1^*$), dotted line represents JGL($\lambda_1=0$), 
@@ -1131,7 +1032,7 @@ R.Superior Temporal Gyrus, posterior division	&	R.Heschl's Gyrus	\\
 L.Cingulate Gyrus, anterior division	&	R.Brain-Stem 	\\
  \hline
 \end{tabular}  }
-\caption{List of 44 differential edges in decreasing order of absolute difference. L. and R. are acronyms of left and right, respectively.}
+\caption{List of 44 connectome graph edges that differ between AD and HC. Edges are listed in decreasing order of absolute difference. L. and R. are acronyms of left and right, respectively.}
 \end{center}
 \end{table}
 
